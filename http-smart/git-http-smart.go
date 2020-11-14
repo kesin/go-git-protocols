@@ -42,10 +42,8 @@ func handleRefs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add git specifies header and get formatted body from git command
-	cType := fmt.Sprintf("application/x-%s-advertisement", service)
-	pFirst := fmt.Sprintf("# service=%s\n", service)
-	w.Header().Add("Content-Type", cType)
-	w.Header().Add("Cache-Control", "no-cache")
+	pFirst := fmt.Sprintf("# service=%s\n", service) // protocol v1
+	handleRefsHeader(&w, service)
 
 	cmdRefs := exec.Command("git", service[4:], "--stateless-rpc", "--advertise-refs", repoPath)
 	refsBytes, _ := cmdRefs.Output()
@@ -64,6 +62,8 @@ func processPack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	handlePackHeader(&w, service)
+
 	// a smart way handle stdin and stdout
 	cmdPack := exec.Command("git", service[4:], "--stateless-rpc", repoPath)
 	cmdStdin, err := cmdPack.StdinPipe()
@@ -75,6 +75,10 @@ func processPack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// transfer data
-	go func() { _, _ = io.Copy(cmdStdin, r.Body) }()
+	go func() {
+		_, _ = io.Copy(cmdStdin, r.Body)
+		_ = cmdStdin.Close()
+	}()
 	_, _ = io.Copy(w, cmdStdout)
+	_ = cmdPack.Wait() // wait for std complete
 }
