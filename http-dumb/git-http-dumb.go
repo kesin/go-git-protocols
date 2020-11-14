@@ -1,4 +1,4 @@
-// Usage: ./git-http-dumb -repo=/xxx/xxx/xxx/ -port=8881
+// Usage: ./http-dumb -repo=/xxx/xxx/xxx/ -port=8881
 package main
 
 import (
